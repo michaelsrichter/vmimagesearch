@@ -1,0 +1,181 @@
+﻿@using vmimagesearch.website
+@using Microsoft.Framework.OptionsModel
+@addTagHelper "*, Microsoft.AspNet.Mvc.TagHelpers"
+@inject IOptions<AppSettings> AppSettings
+@{
+    ViewBag.Title = "Image Search";
+}
+<!DOCTYPE html>
+<html lang="en_US" ng-app="typeAheadModule">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title - @AppSettings.Options.SiteTitle</title>
+
+    <environment names="Development">
+        <link rel="stylesheet" href="~/lib/bootswatch/bootstrap.css" />
+        <link href="~/lib/ng-prettyjson/ng-prettyjson.min.css" rel="stylesheet" />
+    </environment>
+    <environment names="Staging,Production">
+        <link rel="stylesheet" href="//bootswatch.com/superhero/bootstrap.min.css"
+              asp-fallback-href="~/lib/bootswatch/bootstrap.css"
+              asp-fallback-test-class="hidden" asp-fallback-test-property="visibility" asp-fallback-test-value="hidden" />
+        <link href="~/lib/ng-prettyjson/ng-prettyjson.min.css" rel="stylesheet" />
+    </environment>
+</head>
+<body>
+    <div class="navbar navbar-default">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a asp-controller="Home" asp-action="Index" class="navbar-brand">@AppSettings.Options.SiteTitle</a>
+            </div>
+        </div>
+    </div>
+    <div class="container body-content" ng-cloak ng-controller="TypeaheadCtrl">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="input-group">
+                        <input type="text" ng-model="searchTerm" typeahead-on-select="onSelect($item, $model, $label)" typeahead-min-length="3" typeahead="id as id['&#64;search.text'] for id in getSuggestions($viewValue) | unique:id.Label " placeholder="search for images" class="form-control">
+                        <span class="input-group-btn">
+                            <button ng-click="getSearch(searchTerm)" class="btn btn-default" type="button">Search</button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="row">
+                    <div ng-repeat="result in Results" class="col-md-12">
+                        <ng-form class="form-horizontal">
+                                <div class="panel panel-default">
+                                    <div ng-mouseenter="hover = true" ng-mouseleave="hover = false" ng-class="{highlight : hover}" ng-init="isCollapsed = true" ng-click="isCollapsed = !isCollapsed" class="panel-heading">{{result.Label}}</div>
+                                    <div class="panel-body">
+                                        <p>{{result.ImageFamily}} - <em>Published <span am-time-ago="result.PublishedDateFormatted" /></em> </p>
+                                        <div collapse="isCollapsed">
+                                            <p>Published by <strong>{{result.PublisherName}}</strong> on {{result.PublishedDateFormatted | amCalendar}}</p>
+                                            <p>{{result.Description}}</p>
+                                            <fieldset>
+                                                <legend>Generate Deployment Script</legend>
+                                                <div class="form-group">
+                                                    <label for="name" class="col-lg-2 control-label">Admin User Name</label>
+                                                    <div class="col-lg-10">
+                                                        <input type="text" ng-model="result.Name" class="form-control" id="name" placeholder="admin user name">
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="password" class="col-lg-2 control-label">Admin Password</label>
+                                                    <div class="col-lg-10">
+                                                        <input type="text" ng-model="result.Password" class="form-control" id="password" placeholder="admin password">
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="service" class="col-lg-2 control-label">Cloud Service</label>
+                                                    <div class="col-lg-10">
+                                                        <input type="text" ng-model="result.CloudService" class="form-control" id="cloudservice" placeholder="cloud service">
+                                                        <div class="checkbox">
+                                                            <label>
+                                                                <input ng-model="result.ExistingService" name="existingservice" type="checkbox"> Existing Service?
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group" ng-show="!result.ExistingService">
+                                                    <label for="location" class="col-lg-2 control-label">Location</label>
+                                                    <div class="col-lg-10">
+                                                        <select class="form-control" name="location" ng-model="result.Location" ng-options="item for item in Results[$index].LocArray"></select>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <div class="col-lg-10 col-lg-offset-2">
+                                                        <span class="input-group-btn">
+                                                            <button class="btn btn-info" type="button" ng-click="assignResult(result,$index)">Build Script</button>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                </div>
+
+                        </ng-form>
+                    </div>
+                </div>
+            </div>
+            <div id="scriptPanel" class="col-md-6">
+                <div ng-show="showScriptPanel" id="scriptPanelAnchor" class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Powershell Scripts</h3>
+                    </div>
+                    <div class="panel-body">
+                        <pre ng-if="imageScript.ExistingService">                 
+$image = "{{imageScript.ImageName}}"
+$name = "{{imageScript.Label | removenonalphanumeric | lowercase | limitTo:12 | addRandom:3}}"
+$size = "{{imageScript.RecommendedVMSize || "Medium"}}"
+$cloudservice = "{{imageScript.CloudService}}"
+$pwd = "{{imageScript.Password}}"
+$un = "{{imageScript.Name}}"
+Set-AzureSubscription -SubscriptionId (Get-AzureSubscription -Current).SubscriptionId -CurrentStorageAccountName (Get-AzureStorageAccount)[0].StorageAccountName
+New-AzureVMConfig -Name $name -InstanceSize $size -Image $image |
+Add-AzureProvisioningConfig -{{imageScript.OS}} -{{imageScript.OS == "Linux"? "LinuxUser" : "AdminUserName"}} $un -Password $pwd |
+New-AzureVM -ServiceName $cloudservice
+                        </pre>
+                        <pre ng-if="!imageScript.ExistingService">
+$image = "{{imageScript.ImageName}}"
+$name = "{{"my" + imageScript.Label + "vm" | removenonalphanumeric | lowercase | limitTo:12 | addRandom:3}}"
+$size = "{{imageScript.RecommendedVMSize || "Medium"}}"
+$location = "{{imageScript.Location}}"
+$cloudservice = "{{imageScript.CloudService}}"
+$pwd = "{{imageScript.Password}}"
+$un = "{{imageScript.Name}}"
+Set-AzureSubscription -SubscriptionId (Get-AzureSubscription -Current).SubscriptionId -CurrentStorageAccountName (Get-AzureStorageAccount)[0].StorageAccountName
+New-AzureVMConfig -Name $name -InstanceSize $size -Image $image |
+Add-AzureProvisioningConfig -{{imageScript.OS}} -{{imageScript.OS == "Linux"? "LinuxUser" : "AdminUserName"}} $un -Password $pwd |
+New-AzureVM -ServiceName $cloudservice -Location $location
+</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <style>
+            .highlight {
+                border: 1px solid white;
+                cursor: pointer;
+            }
+        </style>
+
+    </div>
+    <hr />
+    <footer>
+        <p>&copy; @DateTime.Now.Year - @AppSettings.Options.SiteTitle</p>
+    </footer>
+    <environment names="Development,Debug,Staging,Production">
+        <script src="//ajax.aspnetcdn.com/ajax/jquery/jquery-1.10.2.min.js"
+                asp-fallback-src="~/lib/jquery/jquery.min.js"
+                asp-fallback-test="window.jQuery">
+        </script>
+        <script src="//ajax.aspnetcdn.com/ajax/bootstrap/3.0.0/bootstrap.min.js"
+                asp-fallback-src="~/lib/bootstrap/js/bootstrap.min.js"
+                asp-fallback-test="window.jQuery">
+        </script>
+        <script src="//ajax.aspnetcdn.com/ajax/hammer.js/2.0.4/hammer.min.js"
+                asp-fallback-src="~/lib/hammer.js/hammer.js"
+                asp-fallback-test="window.Hammer">
+        </script>
+        <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+
+        <script src="~/lib/moment/moment.js"></script>
+        <script src="~/lib/angular-moment/angular-moment.js"></script>
+        <script src="~/lib/angular-ui/angular-ui.js"></script>
+        <script src="~/lib/angular-ui-utils/ui-utils.js"></script>
+        <script src="//angular-ui.github.io/bootstrap/ui-bootstrap-tpls-0.13.0.js"></script>
+        <script src="~/app/search.js"></script>
+    </environment>
+</body>
+</html>

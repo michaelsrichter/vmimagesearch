@@ -1,0 +1,53 @@
+{
+"name": "INDEXNAME",  
+"fields": [
+  {"name": "SearchId", "type": "Edm.String", "key":true, "searchable": false},
+  {"name": "ImageName", "type": "Edm.String", "searchable": false},
+  {"name": "OS", "type": "Edm.String", "facetable": true},
+  {"name": "LogicalSizeInGB", "type": "Edm.Int32"},
+  {"name": "Category", "type": "Edm.String"},
+  {"name": "Location", "type": "Edm.String"},
+  {"name": "Label", "type": "Edm.String"},
+  {"name": "Description", "type": "Edm.String"},
+  {"name": "ImageFamily", "type": "Edm.String"},
+  {"name": "PublisherName", "type": "Edm.String"},
+  {"name": "PublishedDateFormatted", "type": "Edm.DateTimeOffset"},
+  {"name": "SmallIconUri", "type": "Edm.String", "searchable":false},
+  {"name": "RecommendedVMSize", "type": "Edm.String"}
+ ],
+ 
+ "scoringProfiles": [
+        {
+            "name": "boostImageFamilyAndPublisher",
+            "text": {
+                "weights": {
+                    "ImageFamily": 5,
+                    "PublisherName": 100 
+                }
+            }
+        },
+		{
+          "name": "newImages",
+          "functions": [
+            {
+              "type": "freshness",
+              "fieldName": "PublishedDateFormatted",
+              "boost": 100,
+              "interpolation": "quadratic",
+              "freshness": {
+                "boostingDuration": "P3D"
+              }
+            }
+		  ]
+		}
+],
+ 
+ "suggesters": [
+        {
+          "name": "autocomplete",
+          "searchMode": "analyzingInfixMatching",
+          "sourceFields": ["Label"]
+        }
+      ],
+ "corsOptions":  { "allowedOrigins": ["*"] }
+}
