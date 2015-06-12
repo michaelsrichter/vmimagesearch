@@ -58,3 +58,8 @@ and then, in the vmimagesearch.website folder, run
 dnx . web
 ```
 When it says "Started" your ASPNET 5 website is running and you can reach it via http://localhost:5000
+
+### Copyright and License
+- Copyright &copy; Microsoft Corporation 2015
+- Released under the MIT License (MIT)
+- Please see LICENSE for more information.
