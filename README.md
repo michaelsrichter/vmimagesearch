@@ -32,7 +32,7 @@ npm install -g bower
 mpm install -g gulp
 ```  
 
-### Getting Started
+### Running It
 
 Once you have all the prerequistes, getting up and running is just a few steps.
 
@@ -58,6 +58,13 @@ and then, in the vmimagesearch.website folder, run
 dnx . web
 ```
 When it says "Started" your ASPNET 5 website is running and you can reach it via http://localhost:5000
+
+### To learn more
+
+* Azure Automation - http://azure.microsoft.com/en-us/services/automation/
+* Auzre Search - http://azure.microsoft.com/en-us/services/search/ and https://msdn.microsoft.com/en-us/magazine/dn913187.aspx
+* PowerShell - http://blogs.msdn.com/b/powershell/ and https://www.microsoftvirtualacademy.com/en-us/training-courses/getting-started-with-powershell-3-0-jump-start-8276
+* ASPNET 5 - http://www.asp.net/ and http://docs.asp.net/en/latest/
 
 ### Copyright and License
 - Copyright &copy; Microsoft Corporation 2015
